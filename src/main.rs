@@ -4,7 +4,7 @@ use rand::Rng;
 mod ant;
 mod trail;
 
-// Global constants
+// Game constants
 const WIDTH: i32 = 1280;
 const HEIGHT: i32 = 960;
 const TARGET_FPS: u32 = 60;
@@ -14,14 +14,16 @@ const BACKGROUND_COLOR: Color = Color::BLACK;
 // Ants constants
 const ANT_SPEED: f32 = 100.0;
 const ANT_RADIUS: f32 = 1.0;
-const ANT_COUNT: i32 = 10;
+const ANT_COUNT: i32 = 20;
 const ANT_COLOR: Color = Color::WHITE;
 
 // Trail constants
 const TRAIL_BASE_COLOR: Color = Color::YELLOW;
 const TRAIL_ALPHA_MULTIPLIER: i32 = 10000;
 const TRAIL_CONSUME_SPEED: i32 = 10000;
-
+const TRAIL_CHECK_RADIUS: f32 = 10.0;
+const TRAIL_DEFAULT_PROB: f32 = 0.01; // 1%
+const TRAIL_INC_PROB: f32 = 0.01;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
@@ -82,8 +84,9 @@ fn main() {
             // Trail creation
             trail_list.push(trail::Trail { 
                 position: ant.position, 
-                color: TRAIL_BASE_COLOR ,
-                counter: 255 * 10000
+                color: TRAIL_BASE_COLOR,
+                counter: 255 * 10000,
+                prob_to_follow: TRAIL_DEFAULT_PROB
             });
 
             d.draw_circle(
@@ -96,33 +99,44 @@ fn main() {
             ant.check_wall_collision(WIDTH, HEIGHT);
         }
 
-        // Draw tails
+        // Draw trails
         for i in 0..trail_list.len() {
-            let mut trail: &mut trail::Trail = match trail_list.get_mut(i) { 
-                Some(i) => i,
+
+            // Super big tramoia here
+            let safe_trail = match trail_list.get_mut(i) { 
+                Some(i) => i.clone(),
                 None => continue
             };
 
-            trail.counter -= TRAIL_CONSUME_SPEED;
-            trail.color.a = (trail.counter / TRAIL_ALPHA_MULTIPLIER) as u8;
+            {
+                let mut trail: &mut trail::Trail = match trail_list.get_mut(i) { 
+                    Some(i) => i,
+                    None => continue
+                };
 
-            if trail.color.a <= 1 {
-                trail_list.remove(i);
-                continue;
+                trail.counter -= TRAIL_CONSUME_SPEED;
+                trail.color.a = (trail.counter / TRAIL_ALPHA_MULTIPLIER) as u8;
+
+                if trail.color.a <= 1 {
+                    trail_list.remove(i);
+                    continue;
+                }
+
+                trail.color = Color {
+                    r: trail.color.r,  
+                    g: trail.color.g,
+                    b: trail.color.b,
+                    a: trail.color.a
+                };
+
+                d.draw_pixel(
+                    trail.position.x as i32, 
+                    trail.position.y as i32,
+                    trail.color
+                );
             }
-
-            trail.color = Color {
-                r: trail.color.r,  
-                g: trail.color.g,
-                b: trail.color.b,
-                a: trail.color.a
-            };
-
-            d.draw_pixel(
-                trail.position.x as i32, 
-                trail.position.y as i32,
-                trail.color
-            );
+            
+            safe_trail.get_prob_to_follow(&mut trail_list, TRAIL_CHECK_RADIUS, TRAIL_INC_PROB);
         }
     }
 }
