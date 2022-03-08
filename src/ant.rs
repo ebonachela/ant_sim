@@ -45,6 +45,9 @@ impl Ant {
                 self.velocity.x = angle.cos();
                 self.velocity.y = angle.sin();
             }
+
+            // choose one direction per game tick
+            break;
         }
     }
 }

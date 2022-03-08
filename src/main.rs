@@ -3,6 +3,7 @@ use rand::Rng;
 
 mod ant;
 mod trail;
+mod food;
 
 // Game constants
 const WIDTH: i32 = 1280;
@@ -23,8 +24,13 @@ const TRAIL_BASE_COLOR: Color = Color::YELLOW;
 const TRAIL_ALPHA_MULTIPLIER: i32 = 10000;
 const TRAIL_CONSUME_SPEED: i32 = 10000;
 const TRAIL_CHECK_RADIUS: f32 = 10.0;
-const TRAIL_DEFAULT_PROB: f32 = 0.01; // 1%
+const TRAIL_DEFAULT_PROB: f32 = 0.1; // 1%
 const TRAIL_INC_PROB: f32 = 0.01;
+
+// Food constants
+const FOOD_RADIUS: f32 = 10.0;
+const FOOD_START_COUNT: i32 = 1000;
+const FOOD_COLOR: Color = Color::RED;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
@@ -36,6 +42,29 @@ fn main() {
 
     let mut trail_list: Vec<trail::Trail> = Vec::new();
     let mut ant_list: Vec<ant::Ant> = Vec::new();
+    let mut target_list: Vec<food::TargetType> = Vec::new();
+
+    let food_location: food::TargetType = food::TargetType::Food {
+        position: Vector2 {
+            x: 100.0,
+            y: 100.0
+        },
+        radius: FOOD_RADIUS,
+        count: FOOD_START_COUNT,
+        color: FOOD_COLOR
+    };
+    let base_location: food::TargetType = food::TargetType::Base {
+        position: Vector2 {
+            x: (WIDTH / 2) as f32,
+            y: (HEIGHT / 2) as f32
+        },
+        radius: FOOD_RADIUS,
+        color: Color::BLUE
+    };
+
+    target_list.push(food_location);
+    target_list.push(base_location);
+    
     let mut rng = rand::thread_rng();
 
     // Generate ant list
@@ -74,6 +103,28 @@ fn main() {
         d.clear_background(BACKGROUND_COLOR);
         d.draw_text("Ant Simulation", 12, 12, 20, FPS_TEXT_COLOR);
         d.draw_text(&fps_text, 12, 40, 20, FPS_TEXT_COLOR);
+
+        // Draw food and base
+        for i in 0..target_list.len(){
+            match target_list.get(i).unwrap() {
+                food::TargetType::Food {position, radius, color, count: _} => {
+                    d.draw_circle(
+                        position.x as i32, 
+                        position.y as i32, 
+                        *radius, 
+                        color
+                    );
+                },
+                food::TargetType::Base {position, radius, color} => {
+                    d.draw_circle(
+                        position.x as i32, 
+                        position.y as i32, 
+                        *radius, 
+                        color
+                    );
+                }
+            };
+        }
 
         let f_time: f32 = d.get_frame_time() as f32;
 
