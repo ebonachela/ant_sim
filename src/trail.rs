@@ -19,12 +19,11 @@ impl Trail {
 
             if trail == self { continue; }
 
-            let dist: f32 = (
+            let dist: f32 = 
                 f32::powf(self.position.x - trail.position.x, 2.0) + 
-                f32::powf(self.position.y - trail.position.y, 2.0)
-            ).sqrt();
+                f32::powf(self.position.y - trail.position.y, 2.0);
 
-            if dist <= trail_check_radius {
+            if dist <= trail_check_radius * trail_check_radius {
                 trail.prob_to_follow += trail_inc_prob_value;
             }
         }

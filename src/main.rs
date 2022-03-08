@@ -14,8 +14,9 @@ const BACKGROUND_COLOR: Color = Color::BLACK;
 // Ants constants
 const ANT_SPEED: f32 = 100.0;
 const ANT_RADIUS: f32 = 1.0;
-const ANT_COUNT: i32 = 20;
+const ANT_COUNT: i32 = 50;
 const ANT_COLOR: Color = Color::WHITE;
+const ANT_DETECT_RADIUS: f32 = 10.0;
 
 // Trail constants
 const TRAIL_BASE_COLOR: Color = Color::YELLOW;
@@ -58,7 +59,9 @@ fn main() {
             radius: ANT_RADIUS
         });
     }
-   
+
+    let mut trail_counter: i32 = 10;
+  
     // Draw to screen
     while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
@@ -73,7 +76,16 @@ fn main() {
         d.draw_text(&fps_text, 12, 40, 20, FPS_TEXT_COLOR);
 
         let f_time: f32 = d.get_frame_time() as f32;
-      
+
+        trail_counter -= 1;
+
+        let mut should_add_tail: bool = false;
+
+        if trail_counter <= 0 {
+            should_add_tail = true;
+            trail_counter = 10;
+        }
+     
         // Draw ants
         for i in 0..ant_list.len() {
             let mut ant: &mut ant::Ant = ant_list.get_mut(i).unwrap();
@@ -81,13 +93,22 @@ fn main() {
             ant.position.x += ant.speed * ant.velocity.x * f_time;
             ant.position.y += ant.speed * ant.velocity.y * f_time;
             
-            // Trail creation
-            trail_list.push(trail::Trail { 
-                position: ant.position, 
-                color: TRAIL_BASE_COLOR,
-                counter: 255 * 10000,
-                prob_to_follow: TRAIL_DEFAULT_PROB
-            });
+            if should_add_tail {
+                // Trail creation
+                let new_trail: trail::Trail = trail::Trail { 
+                    position: ant.position, 
+                    color: TRAIL_BASE_COLOR,
+                    counter: 255 * 10000,
+                    prob_to_follow: TRAIL_DEFAULT_PROB
+                };
+
+                trail_list.push(new_trail);
+
+                trail_counter = 10;
+
+                new_trail
+                    .get_prob_to_follow(&mut trail_list, TRAIL_CHECK_RADIUS, TRAIL_INC_PROB);
+            }
 
             d.draw_circle(
                 ant.position.x as i32, 
@@ -97,46 +118,36 @@ fn main() {
             );
 
             ant.check_wall_collision(WIDTH, HEIGHT);
+            ant.check_close_trails(trail_list.clone(), ANT_DETECT_RADIUS);
         }
 
         // Draw trails
         for i in 0..trail_list.len() {
-
-            // Super big tramoia here
-            let safe_trail = match trail_list.get_mut(i) { 
-                Some(i) => i.clone(),
+            let mut trail: &mut trail::Trail = match trail_list.get_mut(i) { 
+                Some(i) => i,
                 None => continue
             };
 
-            {
-                let mut trail: &mut trail::Trail = match trail_list.get_mut(i) { 
-                    Some(i) => i,
-                    None => continue
-                };
+            trail.counter -= TRAIL_CONSUME_SPEED;
+            trail.color.a = (trail.counter / TRAIL_ALPHA_MULTIPLIER) as u8;
 
-                trail.counter -= TRAIL_CONSUME_SPEED;
-                trail.color.a = (trail.counter / TRAIL_ALPHA_MULTIPLIER) as u8;
-
-                if trail.color.a <= 1 {
-                    trail_list.remove(i);
-                    continue;
-                }
-
-                trail.color = Color {
-                    r: trail.color.r,  
-                    g: trail.color.g,
-                    b: trail.color.b,
-                    a: trail.color.a
-                };
-
-                d.draw_pixel(
-                    trail.position.x as i32, 
-                    trail.position.y as i32,
-                    trail.color
-                );
+            if trail.color.a <= 1 {
+                trail_list.remove(i);
+                continue;
             }
-            
-            safe_trail.get_prob_to_follow(&mut trail_list, TRAIL_CHECK_RADIUS, TRAIL_INC_PROB);
+
+            trail.color = Color {
+                r: trail.color.r,  
+                g: trail.color.g,
+                b: trail.color.b,
+                a: trail.color.a
+            };
+
+            d.draw_pixel(
+                trail.position.x as i32, 
+                trail.position.y as i32,
+                trail.color
+            );
         }
     }
 }
