@@ -18,7 +18,7 @@ const ANT_RADIUS: f32 = 5.0;
 const ANT_COUNT: i32 = 50;
 const ANT_COLOR: Color = Color::WHITE;
 const ANT_FOOD_COLOR: Color = Color::RED;
-const ANT_DETECT_RADIUS: f32 = 200.0;
+const ANT_DETECT_RADIUS: f32 = 10.0;
 const ANT_SENSE_TARGET_RADIUS: f32 = 200.0;
 
 // Trail constants
