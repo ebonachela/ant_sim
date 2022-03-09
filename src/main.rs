@@ -8,7 +8,7 @@ mod food;
 // Game constants
 const WIDTH: i32 = 1280;
 const HEIGHT: i32 = 960;
-const TARGET_FPS: u32 = 60;
+const TARGET_FPS: u32 = 30;
 const FPS_TEXT_COLOR: Color = Color::WHITE;
 const BACKGROUND_COLOR: Color = Color::BLACK;
 
@@ -18,16 +18,17 @@ const ANT_RADIUS: f32 = 5.0;
 const ANT_COUNT: i32 = 50;
 const ANT_COLOR: Color = Color::WHITE;
 const ANT_FOOD_COLOR: Color = Color::RED;
-const ANT_DETECT_RADIUS: f32 = 10.0;
+const ANT_DETECT_RADIUS: f32 = 200.0;
+const ANT_SENSE_TARGET_RADIUS: f32 = 200.0;
 
 // Trail constants
 const TRAIL_BASE_COLOR: Color = Color::YELLOW;
-const TRAIL_FOOD_COLOR: Color = Color::RED;
+const TRAIL_FOOD_COLOR: Color = Color::BLUE;
 const TRAIL_ALPHA_MULTIPLIER: i32 = 10000;
-const TRAIL_CONSUME_SPEED: i32 = 5000;
-const TRAIL_CHECK_RADIUS: f32 = 100.0;
+const TRAIL_CONSUME_SPEED: i32 = 8000;
+const TRAIL_CHECK_RADIUS: f32 = 20.0;
 const TRAIL_DEFAULT_PROB: f32 = 0.1; // 1%
-const TRAIL_INC_PROB: f32 = 0.25;
+const TRAIL_INC_PROB: f32 = 0.1;
 const TRAIL_COUNTER_START: i32 = 10;
 const TRAIL_COUNTER_DEC: i32 = 2;
 
@@ -175,6 +176,7 @@ fn main() {
             );
 
             ant.check_close_trails(trail_list.clone(), ANT_DETECT_RADIUS);
+            ant.sense_target(target_list.clone(), ANT_SENSE_TARGET_RADIUS);
             ant.check_if_in_target(target_list.clone());
             ant.check_wall_collision(WIDTH, HEIGHT);
         }

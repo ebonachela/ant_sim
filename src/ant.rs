@@ -66,7 +66,7 @@ impl Ant {
                         f32::powf(self.position.x - position.x, 2.0) + 
                         f32::powf(self.position.y - position.y, 2.0);
                     
-                    if dist.sqrt() - radius > 0.0 {
+                    if dist.sqrt() - radius > 1.0 {
                         continue;
                     } 
 
@@ -79,13 +79,54 @@ impl Ant {
                         f32::powf(self.position.x - position.x, 2.0) + 
                         f32::powf(self.position.y - position.y, 2.0);
                     
-                    if dist.sqrt() - radius > 0.0 {
+                    if dist.sqrt() - radius > 1.0 {
                         continue;
                     } 
 
                     self.has_food = false;
                     self.velocity.x *= -1.0;
                     self.velocity.y *= -1.0;
+                }
+            }
+        }
+    }
+
+    pub fn sense_target(&mut self, target_list: Vec<TargetType>, sense_radius: f32) {
+        for i in 0..target_list.len() {
+            match target_list.get(i).unwrap() {
+                TargetType::Food { position, radius, count: _, color: _ } => {
+                    let dist: f32 = (
+                        f32::powf(self.position.x - position.x, 2.0) + 
+                        f32::powf(self.position.y - position.y, 2.0)
+                    ).sqrt();
+                    
+                    if (sense_radius < dist - radius) || self.has_food {
+                        continue;
+                    }
+
+                    let angle: f32 = (position.y - self.position.y)
+                                    .atan2(position.x - self.position.x);
+                
+                    // Change x and y directions
+                    self.velocity.x = angle.cos();
+                    self.velocity.y = angle.sin();
+                },
+                TargetType::Base { position, radius, color: _ } => {
+                    let dist: f32 = (
+                        f32::powf(self.position.x - position.x, 2.0) + 
+                        f32::powf(self.position.y - position.y, 2.0)
+                    ).sqrt();
+                    
+                    if (sense_radius < dist - radius) || !self.has_food {
+                        continue;
+                    } 
+
+                    let angle: f32 = (position.y - self.position.y)
+                                    .atan2(position.x - self.position.x);
+                
+                    // Change x and y directions
+                    self.velocity.x = angle.cos();
+                    self.velocity.y = angle.sin();
                 }
             }
         }
