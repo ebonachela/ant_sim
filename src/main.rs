@@ -13,22 +13,26 @@ const FPS_TEXT_COLOR: Color = Color::WHITE;
 const BACKGROUND_COLOR: Color = Color::BLACK;
 
 // Ants constants
-const ANT_SPEED: f32 = 100.0;
-const ANT_RADIUS: f32 = 1.0;
+const ANT_SPEED: f32 = 300.0;
+const ANT_RADIUS: f32 = 5.0;
 const ANT_COUNT: i32 = 50;
 const ANT_COLOR: Color = Color::WHITE;
+const ANT_FOOD_COLOR: Color = Color::RED;
 const ANT_DETECT_RADIUS: f32 = 10.0;
 
 // Trail constants
 const TRAIL_BASE_COLOR: Color = Color::YELLOW;
+const TRAIL_FOOD_COLOR: Color = Color::RED;
 const TRAIL_ALPHA_MULTIPLIER: i32 = 10000;
-const TRAIL_CONSUME_SPEED: i32 = 10000;
-const TRAIL_CHECK_RADIUS: f32 = 10.0;
+const TRAIL_CONSUME_SPEED: i32 = 5000;
+const TRAIL_CHECK_RADIUS: f32 = 100.0;
 const TRAIL_DEFAULT_PROB: f32 = 0.1; // 1%
-const TRAIL_INC_PROB: f32 = 0.01;
+const TRAIL_INC_PROB: f32 = 0.25;
+const TRAIL_COUNTER_START: i32 = 10;
+const TRAIL_COUNTER_DEC: i32 = 2;
 
 // Food constants
-const FOOD_RADIUS: f32 = 10.0;
+const FOOD_RADIUS: f32 = 50.0;
 const FOOD_START_COUNT: i32 = 1000;
 const FOOD_COLOR: Color = Color::RED;
 
@@ -55,8 +59,8 @@ fn main() {
     };
     let base_location: food::TargetType = food::TargetType::Base {
         position: Vector2 {
-            x: (WIDTH / 2) as f32,
-            y: (HEIGHT / 2) as f32
+            x: (WIDTH / 2) as f32 + 100.0,
+            y: (HEIGHT / 2) as f32 + 100.0
         },
         radius: FOOD_RADIUS,
         color: Color::BLUE
@@ -85,11 +89,12 @@ fn main() {
                 y: velocity_y 
             },
             speed: ANT_SPEED,
-            radius: ANT_RADIUS
+            radius: ANT_RADIUS,
+            has_food: false
         });
     }
 
-    let mut trail_counter: i32 = 10;
+    let mut trail_counter: i32 = TRAIL_COUNTER_START;
   
     // Draw to screen
     while !rl.window_should_close() {
@@ -128,13 +133,13 @@ fn main() {
 
         let f_time: f32 = d.get_frame_time() as f32;
 
-        trail_counter -= 1;
+        trail_counter -= TRAIL_COUNTER_DEC;
 
         let mut should_add_tail: bool = false;
 
         if trail_counter <= 0 {
             should_add_tail = true;
-            trail_counter = 10;
+            trail_counter = TRAIL_COUNTER_START;
         }
      
         // Draw ants
@@ -150,7 +155,8 @@ fn main() {
                     position: ant.position, 
                     color: TRAIL_BASE_COLOR,
                     counter: 255 * 10000,
-                    prob_to_follow: TRAIL_DEFAULT_PROB
+                    prob_to_follow: TRAIL_DEFAULT_PROB,
+                    to_base: if ant.has_food { true } else { false }
                 };
 
                 trail_list.push(new_trail);
@@ -165,11 +171,12 @@ fn main() {
                 ant.position.x as i32, 
                 ant.position.y as i32, 
                 ant.radius, 
-                ANT_COLOR
+                if ant.has_food { ANT_FOOD_COLOR } else { ANT_COLOR }
             );
 
-            ant.check_wall_collision(WIDTH, HEIGHT);
             ant.check_close_trails(trail_list.clone(), ANT_DETECT_RADIUS);
+            ant.check_if_in_target(target_list.clone());
+            ant.check_wall_collision(WIDTH, HEIGHT);
         }
 
         // Draw trails
@@ -178,6 +185,8 @@ fn main() {
                 Some(i) => i,
                 None => continue
             };
+
+            trail.color = if trail.to_base { TRAIL_FOOD_COLOR } else { TRAIL_BASE_COLOR };
 
             trail.counter -= TRAIL_CONSUME_SPEED;
             trail.color.a = (trail.counter / TRAIL_ALPHA_MULTIPLIER) as u8;

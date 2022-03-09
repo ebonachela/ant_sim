@@ -1,5 +1,6 @@
 use raylib::prelude::{Vector2, Color};
 
+#[derive(Clone)]
 pub enum TargetType {
     Food {
         position: Vector2,
@@ -7,7 +8,7 @@ pub enum TargetType {
         count: i32,
         color: Color
     },
-    Base{
+    Base {
         position: Vector2,
         radius: f32,
         color: Color

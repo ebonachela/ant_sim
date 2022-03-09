@@ -5,7 +5,8 @@ pub struct Trail {
     pub position: Vector2,
     pub color: Color,
     pub counter: i32,
-    pub prob_to_follow: f32
+    pub prob_to_follow: f32,
+    pub to_base: bool
 }
 
 impl Trail {
